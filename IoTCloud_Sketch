@@ -18,8 +18,9 @@ void setup() {
   pinMode(LEDG, OUTPUT);
   pinMode(LEDB, OUTPUT);
   
+  //Prime servo in start position
   myservo.attach(9);
-  myservo.write(0);
+  myservo.write(1);
 
   initProperties();
 
@@ -92,5 +93,6 @@ void onDropTreatChange()  {
       delay(15);                       // waits 15 ms for the servo to reach the position
     }
     buttonCount = buttonCount + 1;
+    treats_left = 8 - buttonCount;
   }
 }
