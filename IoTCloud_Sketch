@@ -1,0 +1,96 @@
+#include "thingProperties.h"
+#include <Arduino_LSM6DSOX.h>
+#include <Servo.h>
+
+//Preset variables
+int buttonCount = 0;
+
+Servo myservo;
+
+void setup() {
+
+  //Establish serial connection for debugging
+  Serial.begin(9600);
+  delay(1500);
+
+  //Define RGB LED outputs
+  pinMode(LEDR, OUTPUT);
+  pinMode(LEDG, OUTPUT);
+  pinMode(LEDB, OUTPUT);
+  
+  myservo.attach(9);
+  myservo.write(0);
+
+  initProperties();
+
+  ArduinoCloud.begin(ArduinoIoTPreferredConnection);
+
+  setDebugMessageLevel(2);
+  ArduinoCloud.printDebugInfo();
+
+  //init IMU library
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
+}
+
+void loop() {
+  ArduinoCloud.update();
+}
+
+/*
+  the onRgbLightChange() function is triggered
+  when the rgb_light variable changes
+*/
+
+void onRgbLightChange()  {
+  //create r,g,b variables
+  uint8_t r, g, b;
+
+  //retrieve values from the cloud
+  rgb_light.getValue().getRGB(r, g, b);
+
+  //values on Nano RP2040 Connect are inverted
+  //so let's remap them
+  int red = map(r, 0, 255, 255, 0);
+  int green = map(g, 0, 255, 255, 0);
+  int blue = map(b, 0, 255, 255, 0);
+
+  if (rgb_light.getSwitch()) {
+    analogWrite(LEDR, red);
+    analogWrite(LEDG, green);
+    analogWrite(LEDB, blue);
+  }
+  else {
+    analogWrite(LEDR, 255);
+    analogWrite(LEDG, 255);
+    analogWrite(LEDB, 255);
+  }
+}
+
+/*
+  Since Position is READ_WRITE variable, onPositionChange() is
+  executed every time a new value is received from IoT Cloud.
+*/
+void onPositionChange()  {
+  // Add your code here to act upon Position change
+  myservo.write(position);
+}
+/*
+  Since DropTreat is READ_WRITE variable, onDropTreatChange() is
+  executed every time a new value is received from IoT Cloud.
+*/
+void onDropTreatChange()  {
+  // Add your code here to act upon DropTreat change
+  if (drop_treat == HIGH){
+    int oldpos = 10 + buttonCount * 20;
+    int newpos = oldpos + 20;
+    int pos = oldpos;
+    for (pos = oldpos; pos <= newpos; pos += 1) { // goes from oldpos degrees to newpos degrees in 1 deg steps
+      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15 ms for the servo to reach the position
+    }
+    buttonCount = buttonCount + 1;
+  }
+}
