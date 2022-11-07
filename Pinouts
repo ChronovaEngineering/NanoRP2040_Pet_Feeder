@@ -1,0 +1,5 @@
+Servo -> Arduino Nano RP2040
+
+Red           -> Vin
+Brown/Black   -> GND
+Yellow/White  -> D9
